@@ -1,0 +1,296 @@
+---
+title: "Hw 2back"
+author: "Janna M"
+date: "3/31/2021"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r, echo = FALSE}
+library(tidyverse)
+library(magrittr)
+library(mosaic)
+library(knitr)
+library(kableExtra)
+library(cowplot)
+```
+
+
+
+
+Use a one-line statement to filter the dataset to include just movies from 1920 to 1979 and movies that are between 1 and 3 hours long (runtimeMinutes >= 60 and runtimeMinutes <= 180), and add a new column that codes the startYear into a new variable, decade (“20s,” “30s,” …“70s”). If you do this correctly, there should be 5651 movies remaining in the dataset.
+```{r}
+f <- "https://raw.githubusercontent.com/difiore/ADA-datasets/master/IMDB-movies.csv"
+d <- read_csv(f,  col_names = T)
+
+new_d <- d %>% filter(startYear >= 1920 & startYear <= 1979) %>% 
+  
+  filter(runtimeMinutes <= 180 & runtimeMinutes >= 60) %>% 
+  
+  mutate(decade = case_when(startYear >= 1920 & startYear < 1930 ~ "20s"
+                            ,
+  startYear >= 1930 & startYear < 1940 ~ "30s",
+                          
+  startYear >= 1940 & startYear < 1950 ~ "40s",
+ 
+   startYear >= 1950 & startYear < 1960 ~ "50s",
+  
+  startYear >= 1960 & startYear < 1970 ~ "60s",
+  
+  startYear >= 1970 & startYear < 1980 ~ "70s"))
+
+new_d
+```
+Use {ggplot2} to plot histograms of the distribution of runtimeMinutes for each decade.
+HINT: Try using facet_wrap() to do this!
+
+```{r}
+new_d %>% ggplot(aes(x = runtimeMinutes)) +  geom_histogram() + 
+  facet_wrap(~ decade)
+```
+
+Use a one-line statement to calculate the population mean and population standard deviation in runtimeMinutes for each decade and save the results in a new dataframe, results.
+HINT: Use {dplyr} functions and the pipe operator!
+```{r}
+results <- new_d %>% group_by(decade) %>% summarise(runtime_mean = mean(runtimeMinutes), std_dev = sd(runtimeMinutes), name = "pop")
+results
+```
+
+Draw a single sample of 100 movies, without replacement, from each decade, calculate this single sample mean and sample standard deviation in runtimeMinutes, and estimate the SE around the population mean runtimeMinutes for each decade based on the standard deviation and sample size from these samples.
+```{r}
+set.seed(100)
+sample_results <- new_d %>% group_by(decade) %>% sample_n(100) %>% summarise(runtime_mean = mean(runtimeMinutes), std_dev = sd(runtimeMinutes), name = "sample")
+```
+Compare these estimates to the actual population mean runtimeMinutes for each decade and to the calculated SE in the population mean for samples of size 100 based on the population standard deviation for each decade.
+```{r}
+
+p1 <- rbind(sample_results, results) %>% 
+  ggplot(aes(x = name, y = runtime_mean)) + geom_point() + facet_wrap(~decade)
+p2 <- rbind(sample_results, results) %>% 
+  ggplot(aes(x = name, y = std_dev)) + geom_point() + facet_wrap(~decade)
+plot_grid(p1, p2)
+```
+
+Generate a sampling distribution of mean runtimeMinutes for each decade by [a] drawing 1000 samples of 100 movies from each decade and, for each sample, [b] calculating the mean runtimeMinutes and the standard deviation in runtimeMinutes. Then, calculate the MEAN and the STANDARD DEVIATION of the sampling distribution of sample means for each decade (the former should be a very good estimate of the population mean, while the latter is another estimate of the standard error in the population mean for a particular sample size) and plot a histogram of the sampling distribution. What shape does it have?
+
+```{r}
+#20s('20sMean' = summarize(.data = `20s_sampMean`, mean = mean(`20s_sampMean`$mean), sd = sd(`20s_sampMean`$mean)))
+hist(`20s_sampMean`$mean, main = "Histogram of 20s Sampling Distrubtion", xlab = "Mean runtime (min.)")
+
+#30s
+
+('30sMean' = summarize(.data = `30s_sampMean`, mean = mean(`30s_sampMean`$mean), sd = sd(`30s_sampMean`$mean)))
+hist(`30s_sampMean`$mean, main = "Histogram of 30s Sampling Distrubtion", xlab = "Mean runtime (min.)")
+#40s
+('40sMean' = summarize(.data = `40s_sampMean`, mean = mean(`40s_sampMean`$mean), sd = sd(`40s_sampMean`$mean)))
+hist(`40s_sampMean`$mean, main = "Histogram of 40s Sampling Distrubtion", xlab = "Mean runtime (min.)")
+#50s
+('50sMean' = summarize(.data = `50s_sampMean`, mean = mean(`50s_sampMean`$mean), sd = sd(`50s_sampMean`$mean)))
+hist(`50s_sampMean`$mean, main = "Histogram of 50s Sampling Distrubtion", xlab = "Mean runtime (min.)")
+#60s
+('60sMean' = summarize(.data = `60s_sampMean`, mean = mean(`60s_sampMean`$mean), sd = sd(`60s_sampMean`$mean)))
+hist(`60s_sampMean`$mean, main = "Histogram of 60s Sampling Distrubtion", xlab = "Mean runtime (min.)")
+#70s
+('70sMean' = summarize(.data = `70s_sampMean`, mean = mean(`70s_sampMean`$mean), sd = sd(`70s_sampMean`$mean)))
+hist(`70s_sampMean`$mean, main = "Histogram of 70s Sampling Distrubtion", xlab = "Mean runtime (min.)")
+```
+Finally, compare the standard error in runtimeMinutes for samples of size 100 from each decade [1] as estimated from your first sample of 100 movies, [2] as calculated from the known population standard deviations for each decade, and [3] as estimated from the sampling distribution of sample means.
+```{r}
+samplingSE = c(`20sMean`$sd,`30sMean`$sd,`40sMean`$sd,`50sMean`$sd,`60sMean`$sd,`70sMean`$sd)
+sErrors = cbind(results$se,sample_res$se,samplingSE)
+rownames(sErrors) = names(table(d_filtered$decade))
+colnames(sErrors) = c("True Population","100 Samples","Sampling Dist.")
+sErrors
+```
+Challenge 2 
+
+What is the probability that she will see 9 or fewer bees arrive during any given session?
+What is the probability that she will see no bees arrive in a session?
+What is the probability that she will see exactly 5 bees arrive in a session?
+What is the probability that she will see more than 18 bees arrive in a session?
+
+Plot the relevant Poisson mass function over the values in range 0 ≤  x ≤ 24.
+Using the rpois() function, simulate 1460 results from this distribution (i.e., 4 full years of morning monitoring sessions).
+
+Plot the simulated results using the histogram() function from the {mosaic} package and use xlim() to set the horizontal limits to be from 0 to 24. How do your simulated results compare to the shape of the probability mass function you plotted above?
+
+```{r challenge 2, include=TRUE}
+library(mosaic)
+#9 or fewer bees
+x<-ppois(9,lambda=18)
+x
+#no bees
+x<-ppois(0,lambda=18)
+x
+#exactly 5 bees 
+x<-dpois(5,lambda=18)
+x
+#more than 18 bees
+x<-1-ppois(18,lambda=18)
+x
+#plot
+plot(0:24, rpois( x=0:24, lambda=18 ), xlim=c(0,24))
+
+
+foragingbees <-rpois(0:24, lambda=18 )
+foragingbees<- sample(foragingbees, 24, replace=TRUE)
+plot2<- histogram(foragingbees, 
+          main = "foraging bees",
+          xlab = "bees", 
+          xlim = c(0, 24), 
+          ylab = "Poisson", 
+          sub = "subtitle", 
+          col = "dark red")             
+
+
+```
+
+Challenge 3
+Calculate the population mean and standard deviation for each quantitative random variable (height, weight, age, number of zombies killed, and years of education).
+NOTE: You will not want to use the built in var() and sd() commands as those are for samples
+
+```{r challenge 3, include=TRUE}
+f <-"https://raw.githubusercontent.com/difiore/ADA-datasets/master/zombies.csv"
+d <- read_csv(f, col_names = TRUE)
+library(radiant)
+library(ggplot2)
+#Calculate population mean and stdev
+heightmean<-mean(d$height)
+weightmean<-mean(d$weight)
+agemean<-mean(d$age)
+killedmean<-mean(d$zombies_killed)
+educationmean<-mean(d$years_of_education)
+heightsd<-sdpop(d$height)
+weightsd<-sdpop(d$weight)
+agesd<-sdpop(d$age)
+killedsd<-sdpop(d$zombies_killed)
+educationsd<-sd(d$years_of_education)
+
+# scatter plot
+
+heightagegraph<-ggplot(data=d, aes(x = age, y = height,)) + geom_point() 
+print(heightagegraph)
+weightagegraph<-ggplot(data=d, aes(x = age, y = weight,)) + geom_point() 
+print(weightagegraph)
+# positive relationship
+heighthist<-hist(d$height)
+heightqq<-qqnorm(d$height, pch = 1, frame = FALSE)
+weighthist<-hist(d$weight)
+weightqq<-qqnorm(d$weight, pch = 1, frame = FALSE)
+agehist<-hist(d$age)
+ageqq<-qqnorm(d$age, pch = 1, frame = FALSE)
+zombieskilledhist<-hist(d$zombies_killed)
+killedqq<-qqnorm(d$zombies_killed, pch = 1, frame = FALSE)
+educationhist<-hist(d$years_of_education)
+educationqq<-qqnorm(d$years_of_education, pch = 1, frame = FALSE)
+
+#Height, age , and weight are drawn from normal distribution
+# zombies killed and years of education are not 
+colSd <- function (x, na.rm=FALSE) apply(X=x, MARGIN=2, FUN=sd, na.rm=na.rm)
+variablesd<-select(d,height,weight,age,zombies_killed,years_of_education)
+dheight2<-sample_n(variablesd,size=50,replace=FALSE)
+colMeans(variablesd)
+colSd(variablesd) #standard deviation 
+CI <- function(x, level = 0.95) {
+  alpha <- 1 - level
+  ci <- mean(x) + c(-1, 1) * qnorm(1 - (alpha / 2)) * sqrt(var(x) / length(x))
+  return(ci)
+}
+CI(variablesd$height) 
+CI(variablesd$weight) 
+CI(variablesd$age) 
+CI(variablesd$zombies_killed)
+CI(variablesd$years_of_education)
+#
+
+k <- 50 # number of samples
+n <-99 # size of each sample
+s <- list(length = k) 
+for (i in 1:k) {
+  s[[i]] <- sample(variablesd$height, size = n, replace = FALSE)
+}
+matrixmean <- matrix(unlist(s), ncol = 50, byrow = TRUE)
+t(matrixmean)%>%
+  colMeans(matrixmean)
+matrixsd <- matrix(unlist(s), ncol = 50, byrow = TRUE)
+t(matrixsd)%>%
+  colSd(matrixsd)
+k <- 50 # number of samples
+n <- 100 # size of each sample
+s <- list(length = k) 
+for (i in 1:k) {
+  s[[i]] <- sample(variablesd$weight, size = n, replace = FALSE)
+}
+matrixmean <- matrix(unlist(s), ncol = 30, byrow = TRUE)
+t(matrixmean)%>%
+  colMeans(matrixmean)
+matrixsd <- matrix(unlist(s), ncol = 50, byrow = TRUE)
+t(matrixsd)%>%
+  colSd(matrixsd)
+k <- 50 # number of samples
+n <- 100 # size of each sample
+s <- list(length = k) 
+for (i in 1:k) {
+  s[[i]] <- sample(variablesd$age, size = n, replace = FALSE)
+}
+matrixmean <- matrix(unlist(s), ncol = 50, byrow = TRUE)
+t(matrixmean)%>%
+  colMeans(matrixmean)
+matrixsd <- matrix(unlist(s), ncol = 50, byrow = TRUE)
+t(matrixsd)%>%
+  colSd(matrixsd)
+k <- 50 # number of samples
+n <- 100 # size of each sample
+s <- list(length = k) 
+for (i in 1:k) {
+  s[[i]] <- sample(variablesd$zombies_killed, size = n, replace = FALSE)
+}
+matrixmean <- matrix(unlist(s), ncol = 50, byrow = TRUE)
+t(matrixmean)%>%
+  colMeans(matrixmean)
+matrixsd <- matrix(unlist(s), ncol = 50, byrow = TRUE)
+t(matrixsd)%>%
+  colSd(matrixsd)
+k <- 50 # number of samples
+n <- 100# size of each sample
+s <- list(length = k) 
+for (i in 1:k) {
+  s[[i]] <- sample(variablesd$years_of_education, size = n, replace = FALSE)
+}
+matrixmean <- matrix(unlist(s), ncol = 50, byrow = TRUE)
+t(matrixmean)%>%
+  colMeans(matrixmean)
+matrixsd <- matrix(unlist(s), ncol = 50, byrow = TRUE)
+t(matrixsd)%>%
+  colSd(matrixsd)
+
+
+```
+
+
+
+
